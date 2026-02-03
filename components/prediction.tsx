@@ -5,6 +5,7 @@ import * as tf from "@tensorflow/tfjs";
 import { loadModel, processImage } from "@/lib/modelManager";
 import { predictionItem, ProcessStep } from "@/lib/types";
 import { GlassmorphismLaunchTimelineBlock } from "./uitripled/glassmorphism-launch-timeline-block-shadcnui";
+import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager copy";
 
 interface PredictionResult {
   fileName: string;
@@ -29,13 +30,13 @@ export default function PredictImage() {
     try {
         setStatus(ProcessStep.LOADING_MODEL);
 
-        const model =await loadModel();
+        const model =await loadModelUsingOnnx();
 
         setStatus(ProcessStep.CLASSIFYING);
 
       // Process all images in parallel
       const predictions = await Promise.all(
-        fileArray.map((file) => processImage(file, model)),
+        fileArray.map((file) => processImageUsingOnnx(file, model)),
       );
 
       setStatus(ProcessStep.SORTING);
