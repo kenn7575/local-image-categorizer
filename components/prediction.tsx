@@ -2,61 +2,71 @@
 
 import { useEffect, useState, ChangeEvent } from "react";
 import * as tf from "@tensorflow/tfjs";
+import { loadModel, processImage } from "@/lib/modelManager";
+import { predictionItem, ProcessStep } from "@/lib/types";
+import { GlassmorphismLaunchTimelineBlock } from "./uitripled/glassmorphism-launch-timeline-block-shadcnui";
+import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager copy";
+
+interface PredictionResult {
+  fileName: string;
+  prediction: predictionItem[];
+  imageUrl: string;
+}
 
 export default function PredictImage() {
-  const [model, setModel] = useState<tf.GraphModel | null>(null);
-  const [result, setResult] = useState<number[] | null>(null);
+  const [results, setResults] = useState<PredictionResult[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [status, setStatus] = useState<ProcessStep>(ProcessStep.BEFORE_UPLOAD);
 
-  // Load model once
-  useEffect(() => {
-    const loadModel = async () => {
-      const m = await tf.loadGraphModel("/model/model.json");
-      setModel(m);
-    };
+  const handleImages = async (e: ChangeEvent<HTMLInputElement>) => {
+    setStatus(ProcessStep.IMPORTING);
 
-    loadModel();
-  }, []);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  const handleImage = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !model) return;
+    setIsProcessing(true);
+    const fileArray = Array.from(files);
 
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
+    try {
+        setStatus(ProcessStep.LOADING_MODEL);
 
-    console.log("Image loaded:", img);
-    img.onload = async () => {
-      const tensor = tf.browser
-        .fromPixels(img)
-        .resizeBilinear([150, 150])
-        .toFloat()
-        .div(255)
-        .expandDims(0); // [1, 150, 150, 3]
+        const model =await loadModelUsingOnnx();
 
-    console.log("Tensor shape:", tensor.shape);
-      const prediction = model.predict(tensor) as tf.Tensor;
-      const data = await prediction.data();
+        setStatus(ProcessStep.CLASSIFYING);
 
-      console.log("Prediction data:", data);
+      // Process all images in parallel
+      const predictions = await Promise.all(
+        fileArray.map((file) => processImageUsingOnnx(file, model)),
+      );
 
-      setResult(Array.from(data));
-
-      tf.dispose([tensor, prediction]);
-    };
+      setStatus(ProcessStep.SORTING);
+      console.log("All predictions:", predictions);
+      setResults(predictions);
+    } catch (error) {
+      console.error("Error processing images:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleImage}
-        placeholder="Upload an image"
-      />
+  
 
-      {result && (
-        <pre>{JSON.stringify(result, null, 2)}</pre>
-      )}
+      {isProcessing && <p>Processing images...</p>}
+      <GlassmorphismLaunchTimelineBlock
+        onClick={() => {
+          // create a new input element and trigger click
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = "image/*";
+          input.multiple = true;
+          input.onchange = (ev) =>
+            handleImages(ev as unknown as ChangeEvent<HTMLInputElement>);
+          input.click();
+        }}
+        status={status}
+      />
     </>
   );
 }
