@@ -1,207 +1,106 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
-import Image from "next/image";
+import { ChangeEvent, useEffect, useState } from "react";
+import * as ort from "onnxruntime-web";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+const SIZE = 150;
 
-type PredictResponse = {
-  predictedLabel: string;
-  confidence: number;
-  top3: Array<{ label: string; probability: number }>;
-  probabilities?: Array<{ label: string; probability: number }>;
-  error?: string;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function toNumber(value: unknown): number {
-  return typeof value === "number" ? value : Number(value);
-}
-
-function parsePredictResponse(value: unknown): PredictResponse {
-  if (!isRecord(value)) {
-    return {
-      predictedLabel: "",
-      confidence: 0,
-      top3: [],
-      error: "Invalid response",
-    };
-  }
-
-  const predictedLabel =
-    typeof value.predictedLabel === "string" ? value.predictedLabel : "";
-  const confidence = toNumber(value.confidence);
-
-  const top3Raw = value.top3;
-  const top3 = Array.isArray(top3Raw)
-    ? top3Raw.filter(isRecord).map((x) => ({
-        label: typeof x.label === "string" ? x.label : "",
-        probability: toNumber(x.probability),
-      }))
-    : [];
-
-  const probsRaw = value.probabilities;
-  const probabilities = Array.isArray(probsRaw)
-    ? probsRaw.filter(isRecord).map((x) => ({
-        label: typeof x.label === "string" ? x.label : "",
-        probability: toNumber(x.probability),
-      }))
-    : undefined;
-
-  const error = typeof value.error === "string" ? value.error : undefined;
-  return { predictedLabel, confidence, top3, probabilities, error };
+async function toTensor(url: string) {
+  const img = new Image();
+  img.src = url;
+  await img.decode();
+  const c = document.createElement("canvas");
+  c.width = c.height = SIZE;
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new Error("No ctx");
+  ctx.drawImage(img, 0, 0, SIZE, SIZE);
+  return ort.Tensor.fromImage(ctx.getImageData(0, 0, SIZE, SIZE));
 }
 
 export default function PredictImage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [session, setSession] = useState<ort.InferenceSession | null>(null);
+  const [labels, setLabels] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [best, setBest] = useState<{ label: string; prob: number } | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
-  const [prediction, setPrediction] = useState<null | {
-    predictedLabel: string;
-    confidence: number;
-    top3: Array<{ label: string; probability: number }>;
-    probabilities?: Array<{ label: string; probability: number }>;
-  }>(null);
 
-  const handleImage = (e: ChangeEvent<HTMLInputElement>) => {
-    const nextFile = e.target.files?.[0] ?? null;
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPrediction(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        ort.env.wasm.wasmPaths =
+          "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
+
+        const [sess, lbls] = await Promise.all([
+          ort.InferenceSession.create("/model/model.onnx", {
+            executionProviders: ["wasm"],
+            graphOptimizationLevel: "all",
+          }),
+          fetch("/model/labels.json").then(
+            (r) => r.json() as Promise<string[]>,
+          ),
+        ]);
+        setSession(sess);
+        setLabels(lbls);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+  }, []);
+
+  const handleImage = async (e: ChangeEvent<HTMLInputElement>) => {
     setError(null);
-    setFile(nextFile);
-    setPreviewUrl(nextFile ? URL.createObjectURL(nextFile) : null);
-  };
+    setBest(null);
 
-  const canPredict = useMemo(() => !!file && !loading, [file, loading]);
-
-  const runPrediction = async () => {
+    const file = e.target.files?.[0];
     if (!file) return;
-    setLoading(true);
-    setError(null);
-    setPrediction(null);
+    if (!session) {
+      setError("Model is still loading...");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setImageUrl(url);
 
     try {
-      const form = new FormData();
-      form.append("file", file);
+      const out = await session.run({
+        [session.inputNames[0]]: await toTensor(url),
+      });
+      const y = out[session.outputNames[0]];
+      const scores = Array.from((y?.data as Float32Array) ?? []);
+      if (!scores.length) throw new Error("No output");
 
-      const res = await fetch("/api/predict", { method: "POST", body: form });
-      const data = parsePredictResponse(await res.json());
-      if (!res.ok)
-        throw new Error(data.error || `Request failed (${res.status})`);
-
-      setPrediction({
-        predictedLabel: data.predictedLabel,
-        confidence: data.confidence,
-        top3: data.top3,
-        probabilities: data.probabilities,
+      let bestI = 0;
+      for (let i = 1; i < scores.length; i++)
+        if (scores[i] > scores[bestI]) bestI = i;
+      const m = Math.max(...scores);
+      const sum = scores.reduce((a, s) => a + Math.exp(s - m), 0) || 1;
+      setBest({
+        label: labels[bestI] ?? `class_${bestI}`,
+        prob: Math.exp(scores[bestI] - m) / sum,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
-      setLoading(false);
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl p-4">
-      <Card className="p-6">
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">Image classification</h1>
-            <p className="text-muted-foreground text-sm">
-              Upload an image and the ONNX model predicts its class.
-            </p>
-          </div>
+    <div>
+      <input type="file" accept="image/*" onChange={handleImage} />
+      {!session && !error && <div>Loading…</div>}
+      {error && <div>{error}</div>}
 
-          <div className="grid gap-2">
-            <Label htmlFor="file">Image</Label>
-            <input
-              id="file"
-              type="file"
-              accept="image/*"
-              onChange={handleImage}
-            />
-          </div>
+      {imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt="Uploaded" style={{ maxWidth: 320 }} />
+      )}
 
-          {previewUrl && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-md border">
-              <Image
-                src={previewUrl}
-                alt="Uploaded preview"
-                fill
-                className="object-contain"
-                unoptimized
-              />
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <Button onClick={runPrediction} disabled={!canPredict}>
-              {loading ? "Predicting…" : "Predict"}
-            </Button>
-            {error && <div className="text-sm text-red-600">{error}</div>}
-          </div>
-
-          {prediction && (
-            <div className="grid gap-2 rounded-md border p-4">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Prediction: </span>
-                <span className="font-semibold">
-                  {prediction.predictedLabel}
-                </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  ({Math.round(prediction.confidence * 1000) / 10}%)
-                </span>
-              </div>
-
-              {prediction.top3.length > 0 && (
-                <div className="text-sm">
-                  <div className="text-muted-foreground mb-1">Top 3</div>
-                  <ul className="grid gap-1">
-                    {prediction.top3.map((x) => (
-                      <li key={x.label} className="flex justify-between">
-                        <span>{x.label}</span>
-                        <span className="text-muted-foreground">
-                          {Math.round(x.probability * 1000) / 10}%
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {prediction.probabilities &&
-                prediction.probabilities.length > 0 && (
-                  <div className="text-sm">
-                    <div className="text-muted-foreground mb-1">
-                      All classes
-                    </div>
-                    <ul className="grid gap-1">
-                      {prediction.probabilities
-                        .slice()
-                        .sort((a, b) => b.probability - a.probability)
-                        .map((x) => (
-                          <li key={x.label} className="flex justify-between">
-                            <span>{x.label}</span>
-                            <span className="text-muted-foreground">
-                              {Math.round(x.probability * 1000) / 10}%
-                            </span>
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                )}
-            </div>
-          )}
+      {best && (
+        <div>
+          {best.label} ({(best.prob * 100).toFixed(1)}%)
         </div>
-      </Card>
+      )}
     </div>
   );
 }
