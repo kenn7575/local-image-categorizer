@@ -3,12 +3,22 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import * as tf from "@tensorflow/tfjs";
 import { loadModel, processImage } from "@/lib/modelManager_old";
-import { predictionItem, PredictionResult, ProcessStep } from "@/lib/types";
+import {
+  predictionItem,
+  PredictionResult,
+  ProcessStep,
+  Task,
+} from "@/lib/types";
 import { GlassmorphismLaunchTimelineBlock } from "./uitripled/glassmorphism-launch-timeline-block-shadcnui";
 import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager";
 
-export default function PredictImage({setPredictions, setMode}: {setPredictions: (predictions: PredictionResult[]) => void, setMode?: (mode: "upload" | "review") => void}) {
-
+export default function PredictImage({
+  setPredictions,
+  setMode,
+}: {
+  setPredictions: (predictions: PredictionResult[]) => void;
+  setMode?: (mode: "upload" | "review") => void;
+}) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<ProcessStep>(ProcessStep.BEFORE_UPLOAD);
 
@@ -36,7 +46,6 @@ export default function PredictImage({setPredictions, setMode}: {setPredictions:
       setStatus(ProcessStep.SORTING);
       setPredictions(predictions);
 
-      await saveResults(predictions);
       if (setMode) setMode("review");
     } catch (error) {
       console.error("Error processing images:", error);
@@ -45,55 +54,13 @@ export default function PredictImage({setPredictions, setMode}: {setPredictions:
     }
   };
 
-  const saveResults = async (predictions: PredictionResult[]) => {
-    setStatus(ProcessStep.SORTING);
-    const collectionId = Date.now().toString();
-
-    // Batch upload: multipart/form-data with repeated "files" and "filePaths"
-    const formData = new FormData();
-
-    const reviewList = predictions.map((prediction) => {
-      const type = prediction.prediction.sort(
-        (a, b) => b.certainty - a.certainty,
-      )[0].type;
-
-      const filePath = prediction.file ? `${type}/${prediction.file.name}` : "";
-
-      if (prediction.file) {
-        formData.append("files", prediction.file);
-        formData.append("filePaths", filePath);
-      }
-
-      return { ...prediction, filePath };
-    });
-
-    try {
-      const res = await fetch("/api/files", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || `Upload failed (${res.status})`);
-      }
-    } catch (error) {
-      console.error("Failed to save files:", error);
-      return;
-    }
-
-    localStorage.setItem(
-      "reviewCollection_" + collectionId,
-      JSON.stringify(reviewList),
-    );
-  };
-
   return (
     <>
       {isProcessing && <p>Processing images...</p>}
       <GlassmorphismLaunchTimelineBlock
         triggerReview={() => {
-          if (setMode) {  } else {
+          if (setMode) {
+          } else {
             console.warn("setMode is not provided");
           }
         }}
