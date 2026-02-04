@@ -74,6 +74,8 @@ export const loadModelUsingOnnx = async (modelUrl: string = "/model/model.onnx")
   const externalDataBuffer = await externalDataResponse.arrayBuffer();
   
   // Create session with external data
+  ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
+  
   const model = await ort.InferenceSession.create(modelBuffer, {
     executionProviders: ['wasm'],
     externalData: [
