@@ -40,5 +40,16 @@ export interface PredictionResult {
   prediction: predictionItem[];
   imageUrl: string;
   file?: File;
-  manualCategory?: string;
+}
+
+// for board
+export type Id = string | number;
+export type Column = {
+  id: Id;
+  title: string;
+};
+
+export interface Task extends PredictionResult {
+  id: Id;
+  columnId: Id;
 }

@@ -37,6 +37,7 @@ export default function PredictImage({setPredictions, setMode}: {setPredictions:
       setPredictions(predictions);
 
       await saveResults(predictions);
+      if (setMode) setMode("review");
     } catch (error) {
       console.error("Error processing images:", error);
     } finally {
@@ -92,7 +93,7 @@ export default function PredictImage({setPredictions, setMode}: {setPredictions:
       {isProcessing && <p>Processing images...</p>}
       <GlassmorphismLaunchTimelineBlock
         triggerReview={() => {
-          if (setMode) {setMode("review")   } else {
+          if (setMode) {  } else {
             console.warn("setMode is not provided");
           }
         }}

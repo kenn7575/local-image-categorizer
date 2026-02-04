@@ -1,6 +1,6 @@
 "use client";
 
-import { PredictionResult } from "@/lib/types";
+import { Column, PredictionResult, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   closestCorners,
@@ -41,17 +41,7 @@ import { Input } from "../ui/input";
 
 // --- Types ---
 
-type Id = string | number;
 
-type Column = {
-  id: Id;
-  title: string;
-};
-
-interface Task extends PredictionResult {
-  id: Id;
-  columnId: Id;
-}
 
 // --- Mock Data ---
 
@@ -92,7 +82,6 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
         ...p,
         id: p.fileName,
         columnId: (
-          p.manualCategory ||
           highestPrediction?.type ||
           "street"
         ).toLowerCase(),
@@ -156,7 +145,6 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
         if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
           const newColumnId = tasks[overIndex].columnId;
           tasks[activeIndex].columnId = newColumnId;
-          tasks[activeIndex].manualCategory = newColumnId as string;
         }
 
         return arrayMove(tasks, activeIndex, overIndex);
@@ -172,7 +160,6 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
         const newColumnId = overId;
 
         tasks[activeIndex].columnId = newColumnId;
-        tasks[activeIndex].manualCategory = newColumnId as string;
         
         console.log("DROPPING TASK OVER COLUMN", { activeIndex });
         return arrayMove(tasks, activeIndex, activeIndex);
@@ -433,9 +420,9 @@ function TaskCard({ task, isOverlay }: TaskCardProps) {
             <span>{(task.prediction[0].certainty * 100).toFixed(1)}%</span>
           </div>
         )}
-        {task.manualCategory && (
+        {task.columnId && (
           <Badge variant="secondary" className="mt-1 w-fit text-[10px]">
-            Manual: {task.manualCategory}
+            Manual: {task.columnId}
           </Badge>
         )}
       </div>

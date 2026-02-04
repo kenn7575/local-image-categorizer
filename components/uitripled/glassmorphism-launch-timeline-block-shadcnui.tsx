@@ -127,38 +127,7 @@ export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview
             </div>
           </motion.div>
         )}
-        {status === ProcessStep.SORTING && (
-          <motion.div
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative overflow-hidden rounded-3xl border border-border/50 bg-background/45 p-10 backdrop-blur-2xl"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.04] via-transparent to-transparent" />
-            <div className="relative">
-              <div className="space-y-5">
-                <h2 className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-                  Done! Time to review your classified images
-                </h2>
-                <p className="max-w-xl text-base leading-relaxed text-foreground/70 md:text-lg">
-                  Your images have been successfully classified and sorted.
-                  Click the button below to review and make any necessary
-                  adjustments.
-                </p>
-              </div>
-
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Button
-                size="lg"
-                className="h-12 rounded-full px-8 text-sm uppercase tracking-[0.2em] cursor-pointer"
-                onClick={triggerReview}
-              >
-                Review images
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-        )}
+        
 
         <motion.ul
           variants={container}
