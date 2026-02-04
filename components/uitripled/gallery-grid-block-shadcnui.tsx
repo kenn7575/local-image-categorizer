@@ -189,8 +189,8 @@ export function GalleryGridBlock() {
                       className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm"
                       aria-hidden="true"
                     >
-                      <ZoomIn className="mb-2 h-8 w-8 text-[var(--muted-foreground)]" />
-                      <h3 className="mb-1 text-center text-lg font-semibold text-[var(--muted-foreground)]">
+                      <ZoomIn className="mb-2 h-8 w-8 text-muted-foreground" />
+                      <h3 className="mb-1 text-center text-lg font-semibold text-muted-foreground">
                         {image.title}
                       </h3>
                       <Badge variant="secondary">{image.category}</Badge>
@@ -228,7 +228,7 @@ export function GalleryGridBlock() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="absolute -right-12 top-0 text-[var(--muted-foreground)] hover:bg-white/10"
+                  className="absolute -right-12 top-0 text-muted-foreground hover:bg-white/10"
                   onClick={() => setSelectedImage(null)}
                   aria-label="Close gallery dialog"
                 >
@@ -239,7 +239,7 @@ export function GalleryGridBlock() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:bg-white/10"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:bg-white/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePrev();
@@ -251,7 +251,7 @@ export function GalleryGridBlock() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:bg-white/10"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:bg-white/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleNext();
@@ -277,7 +277,7 @@ export function GalleryGridBlock() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="mt-4 text-center text-[var(--muted-foreground)]"
+                  className="mt-4 text-center text-muted-foreground"
                   id="gallery-dialog-description"
                 >
                   <h3
