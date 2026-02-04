@@ -38,6 +38,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { saveResults } from "@/lib/saveResults";
 
 // --- Types ---
 
@@ -220,7 +221,7 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
       {/* Header */}
       <div className="relative flex flex-col gap-4 rounded-2xl border border-border/40 bg-background/60 p-6 backdrop-blur-xl md:flex-row md:items-center md:justify-between">
         {/* Gradient overlay */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-foreground/[0.04] via-transparent to-transparent opacity-60" />
+
         <div className="relative z-10">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Review images
@@ -231,7 +232,13 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
         </div>
         <div className="flex items-center gap-2">
           
-          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
+          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+          onClick={async ()=>{
+            console.log("Saving results...", tasks);
+            await saveResults(tasks);
+            // navigate to /
+            window.location.href = "/";
+          }}>
           
             Save images
           </Button>
