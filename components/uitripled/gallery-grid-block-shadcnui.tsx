@@ -5,50 +5,50 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Grid, X, ZoomIn } from "lucide-react";
-import { KeyboardEvent, useState } from "react";
+import { KeyboardEvent, useState, useEffect } from "react";
 
-const galleryImages = [
-  {
-    id: 1,
-    url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500",
-    title: "Abstract Architecture",
-    category: "Architecture",
-  },
-  {
-    id: 2,
-    url: "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?w=500",
-    title: "Modern Design",
-    category: "Design",
-  },
-  {
-    id: 3,
-    url: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=500",
-    title: "Urban Landscape",
-    category: "Nature",
-  },
-  {
-    id: 4,
-    url: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=500",
-    title: "Digital Art",
-    category: "Art",
-  },
-  {
-    id: 5,
-    url: "https://images.unsplash.com/photo-1618556450991-2f1af64e8191?w=500",
-    title: "Creative Space",
-    category: "Architecture",
-  },
-  {
-    id: 6,
-    url: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=500",
-    title: "Minimalist View",
-    category: "Design",
-  },
-];
+interface GalleryImage {
+  id: number;
+  url: string;
+  title: string;
+  category: string;
+}
 
 export function GalleryGridBlock() {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [filter, setFilter] = useState<string>("All");
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+
+  useEffect(() => {
+    fetch("/api/files")
+      .then((res) => res.json())
+      .then((data) => {
+        const files = data.files;
+        const images: GalleryImage[] = [];
+        let idCounter = 1;
+
+        if (files) {
+          Object.keys(files).forEach((category) => {
+            // @ts-ignore
+            if (Array.isArray(files[category])) {
+               // @ts-ignore
+                files[category].forEach((file: any) => {
+                    images.push({
+                        id: idCounter++,
+                        url: file.src,
+                        title: file.fileName,
+                        category: category.charAt(0).toUpperCase() + category.slice(1)
+                    });
+                });
+            }
+          });
+        }
+        setGalleryImages(images);
+      })
+      .catch((error) => {
+        console.error("Error fetching images:", error);
+      });
+  }, []);
 
   const categories = [
     "All",

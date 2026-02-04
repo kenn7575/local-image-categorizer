@@ -80,7 +80,7 @@ const item: Variants = {
 
 
 
-export function GlassmorphismLaunchTimelineBlock({onClick, status}: {onClick?: () => void, status: ProcessStep}) {
+export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview}: {onClick?: () => void, status: ProcessStep, triggerReview?: () => void}) {
 
   return (
     <section className="relative overflow-hidden px-6 py-24 lg:py-32">
@@ -146,7 +146,7 @@ export function GlassmorphismLaunchTimelineBlock({onClick, status}: {onClick?: (
               <Button
                 size="lg"
                 className="h-12 rounded-full px-8 text-sm uppercase tracking-[0.2em] cursor-pointer"
-                onClick={onClick}
+                onClick={triggerReview}
               >
                 Review images
               </Button>

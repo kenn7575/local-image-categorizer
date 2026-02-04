@@ -3,20 +3,15 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import * as tf from "@tensorflow/tfjs";
 import { loadModel, processImage } from "@/lib/modelManager_old";
-import { predictionItem, ProcessStep } from "@/lib/types";
+import { predictionItem, PredictionResult, ProcessStep } from "@/lib/types";
 import { GlassmorphismLaunchTimelineBlock } from "./uitripled/glassmorphism-launch-timeline-block-shadcnui";
 import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager";
 import { pre } from "framer-motion/client";
 
-interface PredictionResult {
-  fileName: string;
-  prediction: predictionItem[];
-  imageUrl: string;
-  file?: File;
-}
 
-export default function PredictImage() {
-  const [results, setResults] = useState<PredictionResult[]>([]);
+
+export default function PredictImage({setPredictions, setMode}: {setPredictions: (predictions: PredictionResult[]) => void, setMode?: (mode: "upload" | "review") => void}) {
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<ProcessStep>(ProcessStep.BEFORE_UPLOAD);
 
@@ -43,7 +38,7 @@ export default function PredictImage() {
 
       setStatus(ProcessStep.SORTING);
       console.log("All predictions:", predictions);
-      setResults(predictions);
+      setPredictions(predictions);
     } catch (error) {
       console.error("Error processing images:", error);
     } finally {
@@ -103,6 +98,11 @@ export default function PredictImage() {
     <>
       {isProcessing && <p>Processing images...</p>}
       <GlassmorphismLaunchTimelineBlock
+        triggerReview={() => {
+          if (setMode) {setMode("review")   } else {
+            console.warn("setMode is not provided");
+          }
+        }}
         onClick={() => {
           // create a new input element and trigger click
           const input = document.createElement("input");

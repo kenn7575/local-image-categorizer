@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveFile, deleteFile, moveFile, listFiles } from "@/lib/filemanager";
+import { saveFile, deleteFile, moveFile, listFiles, listDirectories } from "@/lib/filemanager";
+import { AllImageFiles } from "@/lib/types";
 
 // POST - Save a file
 export async function POST(request: NextRequest) {
@@ -69,13 +70,35 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// GET - List files in a directory
+// GET - get all files as a 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const directory = searchParams.get("directory") || "";
 
-    const files = await listFiles(directory);
+    const directories = await listDirectories("");
+    
+    const files: AllImageFiles = {
+      street: [],
+      buildings: [],
+      sea: [],
+      mountain: [],
+      glacier: [],
+      forest: [],
+    };
+
+    await Promise.all(
+      directories.map(async (dir) => {
+        if (dir in files) {
+          const fileList = await listFiles(dir);
+          files[dir as keyof AllImageFiles] = fileList.map((f) => ({
+            fileName: f,
+            src: `/gallery/${dir}/${f}`,
+            alt: f,
+          }));
+        }
+      })
+    );
 
     return NextResponse.json({ files });
   } catch (error) {

@@ -30,12 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="flex ">
-          <div className="ml-2 mr-auto w-52">
-            <ContextMenuBubble />
-          </div>
-        </div>
-
+        
         {children}
       </body>
     </html>
