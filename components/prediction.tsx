@@ -2,15 +2,17 @@
 
 import { useEffect, useState, ChangeEvent } from "react";
 import * as tf from "@tensorflow/tfjs";
-import { loadModel, processImage } from "@/lib/modelManager";
+import { loadModel, processImage } from "@/lib/modelManager_old";
 import { predictionItem, ProcessStep } from "@/lib/types";
 import { GlassmorphismLaunchTimelineBlock } from "./uitripled/glassmorphism-launch-timeline-block-shadcnui";
-import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager copy";
+import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager";
+import { pre } from "framer-motion/client";
 
 interface PredictionResult {
   fileName: string;
   prediction: predictionItem[];
   imageUrl: string;
+  file?: File;
 }
 
 export default function PredictImage() {
@@ -28,11 +30,11 @@ export default function PredictImage() {
     const fileArray = Array.from(files);
 
     try {
-        setStatus(ProcessStep.LOADING_MODEL);
+      setStatus(ProcessStep.LOADING_MODEL);
 
-        const model =await loadModelUsingOnnx();
+      const model = await loadModelUsingOnnx();
 
-        setStatus(ProcessStep.CLASSIFYING);
+      setStatus(ProcessStep.CLASSIFYING);
 
       // Process all images in parallel
       const predictions = await Promise.all(
@@ -49,10 +51,56 @@ export default function PredictImage() {
     }
   };
 
+  const saveResults = async (predictions: PredictionResult[]) => {
+    // save all results to the dir coreasponding to the highest certainty
+    // then navigate to the /review?collection=xyz page
+
+    setStatus(ProcessStep.SORTING);
+    const collectionId = Date.now().toString();
+
+    // Save all files using the API
+    await Promise.all(
+      predictions.map(async (prediction) => {
+        if (!prediction.file) return;
+
+        // Get the top prediction (first item has highest certainty)
+        const topPrediction = prediction.prediction[0];
+        const filePath = `sorted/${collectionId}/${topPrediction.type}/${prediction.file.name}`;
+
+        const formData = new FormData();
+        formData.append("file", prediction.file);
+        formData.append("filePath", filePath);
+
+        try {
+          await fetch("/api/files", {
+            method: "POST",
+            body: formData,
+          });
+        } catch (error) {
+          console.error(`Failed to save ${prediction.fileName}:`, error);
+        }
+      }),
+    );
+
+    setStatus(ProcessStep.SORTING);
+
+    // next make a list and save to local storage along with a unique collection id
+
+    const reviewList = predictions.map((prediction) => ({
+      ...prediction,
+      filePath: prediction.file
+        ? `sorted/${collectionId}/${prediction.file.name}`
+        : "",
+    }));
+
+    localStorage.setItem(
+      "reviewCollection_" + collectionId,
+      JSON.stringify(reviewList),
+    );
+  };
+
   return (
     <>
-  
-
       {isProcessing && <p>Processing images...</p>}
       <GlassmorphismLaunchTimelineBlock
         onClick={() => {

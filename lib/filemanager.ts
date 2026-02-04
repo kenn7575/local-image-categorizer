@@ -12,14 +12,14 @@ function resolveGalleryPath(relativePath: string): string {
 export async function saveFile(file: File, filePath: string): Promise<void> {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
-  
+
   // Resolve path relative to public/gallery
   const fullPath = resolveGalleryPath(filePath);
-  
+
   // Ensure the directory exists
   const dir = path.dirname(fullPath);
   await fs.mkdir(dir, { recursive: true });
-  
+
   // Write the file
   await fs.writeFile(fullPath, buffer);
 }
@@ -29,14 +29,17 @@ export async function deleteFile(filePath: string): Promise<void> {
   await fs.unlink(fullPath);
 }
 
-export async function moveFile(oldPath: string, newPath: string): Promise<void> {
+export async function moveFile(
+  oldPath: string,
+  newPath: string,
+): Promise<void> {
   const fullOldPath = resolveGalleryPath(oldPath);
   const fullNewPath = resolveGalleryPath(newPath);
-  
+
   // Ensure the destination directory exists
   const dir = path.dirname(fullNewPath);
   await fs.mkdir(dir, { recursive: true });
-  
+
   // Move the file
   await fs.rename(fullOldPath, fullNewPath);
 }
@@ -44,9 +47,7 @@ export async function moveFile(oldPath: string, newPath: string): Promise<void> 
 export async function listFiles(directory: string): Promise<string[]> {
   const fullPath = resolveGalleryPath(directory);
   const entries = await fs.readdir(fullPath, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name);
+  return entries.filter((entry) => entry.isFile()).map((entry) => entry.name);
 }
 
 export async function listDirectories(directory: string): Promise<string[]> {
@@ -66,4 +67,3 @@ export async function deleteDirectory(directory: string): Promise<void> {
   const fullPath = resolveGalleryPath(directory);
   await fs.rm(fullPath, { recursive: true, force: true });
 }
-
