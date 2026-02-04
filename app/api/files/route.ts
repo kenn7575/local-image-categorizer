@@ -1,26 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveFile, deleteFile, moveFile, listFiles } from "@/lib/filemanager";
 
-// POST - Save a file
+// POST - Save files (multipart/form-data)
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File;
-    const filePath = formData.get("filePath") as string;
 
-    if (!file || !filePath) {
+    const getAll = (keys: string[]) =>
+      keys.flatMap((k) => formData.getAll(k)).filter(Boolean);
+
+    const rawFiles = getAll(["files", "files[]", "file"]);
+    const rawPaths = getAll(["filePaths", "filePaths[]", "filePath"]);
+
+    const files = rawFiles.filter((v): v is File => v instanceof File);
+    const filePaths = rawPaths
+      .filter((v): v is string => typeof v === "string")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (files.length === 0 || filePaths.length === 0) {
       return NextResponse.json(
-        { error: "File and filePath are required" },
+        {
+          error: "files and filePaths are required",
+          hint: "Send multipart/form-data with fields files + filePaths (or files[] + filePaths[]).",
+        },
         { status: 400 },
       );
     }
 
-    await saveFile(file, filePath);
+    if (files.length !== filePaths.length) {
+      return NextResponse.json(
+        { error: "files and filePaths must have the same length" },
+        { status: 400 },
+      );
+    }
 
-    return NextResponse.json({ success: true, path: filePath });
+    await Promise.all(files.map((file, i) => saveFile(file, filePaths[i])));
+
+    return NextResponse.json({ success: true, paths: filePaths });
   } catch (error) {
-    console.error("Error saving file:", error);
-    return NextResponse.json({ error: "Failed to save file" }, { status: 500 });
+    console.error("Error saving files:", error);
+    return NextResponse.json(
+      { error: "Failed to save files" },
+      { status: 500 },
+    );
   }
 }
 

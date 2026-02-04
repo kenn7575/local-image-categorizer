@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState, ChangeEvent } from "react";
-import * as tf from "@tensorflow/tfjs";
-import { loadModel, processImage } from "@/lib/modelManager_old";
+import { useState, ChangeEvent } from "react";
 import { predictionItem, ProcessStep } from "@/lib/types";
 import { GlassmorphismLaunchTimelineBlock } from "./uitripled/glassmorphism-launch-timeline-block-shadcnui";
 import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager";
-import { pre } from "framer-motion/client";
 
 interface PredictionResult {
   fileName: string;
@@ -31,19 +28,20 @@ export default function PredictImage() {
 
     try {
       setStatus(ProcessStep.LOADING_MODEL);
-
       const model = await loadModelUsingOnnx();
 
       setStatus(ProcessStep.CLASSIFYING);
-
-      // Process all images in parallel
-      const predictions = await Promise.all(
-        fileArray.map((file) => processImageUsingOnnx(file, model)),
+      const predictions: PredictionResult[] = await Promise.all(
+        fileArray.map(async (file) => {
+          const result = await processImageUsingOnnx(file, model);
+          return { ...result, file };
+        }),
       );
 
       setStatus(ProcessStep.SORTING);
-      console.log("All predictions:", predictions);
       setResults(predictions);
+
+      await saveResults(predictions);
     } catch (error) {
       console.error("Error processing images:", error);
     } finally {
@@ -52,46 +50,41 @@ export default function PredictImage() {
   };
 
   const saveResults = async (predictions: PredictionResult[]) => {
-    // save all results to the dir coreasponding to the highest certainty
-    // then navigate to the /review?collection=xyz page
-
     setStatus(ProcessStep.SORTING);
     const collectionId = Date.now().toString();
 
-    // Save all files using the API
-    await Promise.all(
-      predictions.map(async (prediction) => {
-        if (!prediction.file) return;
+    // Batch upload: multipart/form-data with repeated "files" and "filePaths"
+    const formData = new FormData();
 
-        // Get the top prediction (first item has highest certainty)
-        const topPrediction = prediction.prediction[0];
-        const filePath = `sorted/${collectionId}/${topPrediction.type}/${prediction.file.name}`;
+    const reviewList = predictions.map((prediction) => {
+      const type = prediction.prediction.sort(
+        (a, b) => b.certainty - a.certainty,
+      )[0].type;
 
-        const formData = new FormData();
-        formData.append("file", prediction.file);
-        formData.append("filePath", filePath);
+      const filePath = prediction.file ? `${type}/${prediction.file.name}` : "";
 
-        try {
-          await fetch("/api/files", {
-            method: "POST",
-            body: formData,
-          });
-        } catch (error) {
-          console.error(`Failed to save ${prediction.fileName}:`, error);
-        }
-      }),
-    );
+      if (prediction.file) {
+        formData.append("files", prediction.file);
+        formData.append("filePaths", filePath);
+      }
 
-    setStatus(ProcessStep.SORTING);
+      return { ...prediction, filePath };
+    });
 
-    // next make a list and save to local storage along with a unique collection id
+    try {
+      const res = await fetch("/api/files", {
+        method: "POST",
+        body: formData,
+      });
 
-    const reviewList = predictions.map((prediction) => ({
-      ...prediction,
-      filePath: prediction.file
-        ? `sorted/${collectionId}/${prediction.file.name}`
-        : "",
-    }));
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || `Upload failed (${res.status})`);
+      }
+    } catch (error) {
+      console.error("Failed to save files:", error);
+      return;
+    }
 
     localStorage.setItem(
       "reviewCollection_" + collectionId,
@@ -104,7 +97,6 @@ export default function PredictImage() {
       {isProcessing && <p>Processing images...</p>}
       <GlassmorphismLaunchTimelineBlock
         onClick={() => {
-          // create a new input element and trigger click
           const input = document.createElement("input");
           input.type = "file";
           input.accept = "image/*";
