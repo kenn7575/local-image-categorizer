@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useState, ChangeEvent } from "react";
+
 import * as tf from "@tensorflow/tfjs";
 import { predictionItem, PredictionResult } from "./types";
 
-export const processImage = async (file: File, model: tf.GraphModel): Promise<PredictionResult> => {
-  
+export const processImage = async (
+  file: File,
+  model: tf.GraphModel,
+): Promise<PredictionResult> => {
   const labels: predictionItem["type"][] = [
     "buildings",
     "forest",
@@ -53,7 +55,9 @@ export const processImage = async (file: File, model: tf.GraphModel): Promise<Pr
   });
 };
 
-export const loadModel = async (modelUrl: string = "model/model.json"): Promise<tf.GraphModel> => {
+export const loadModel = async (
+  modelUrl: string = "model/model.json",
+): Promise<tf.GraphModel> => {
   const model = await tf.loadGraphModel(modelUrl);
   return model;
-}
+};

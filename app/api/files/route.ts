@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveFile, deleteFile, moveFile, listFiles, listDirectories } from "@/lib/filemanager";
+import {
+  saveFile,
+  deleteFile,
+  moveFile,
+  listFiles,
+  listDirectories,
+} from "@/lib/filemanager";
 import { AllImageFiles } from "@/lib/types";
 
 // POST - Save files (multipart/form-data)
@@ -93,14 +99,11 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// GET - get all files as a 
-export async function GET(request: NextRequest) {
+// GET - get all files as a
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const directory = searchParams.get("directory") || "";
-
     const directories = await listDirectories("");
-    
+
     const files: AllImageFiles = {
       street: [],
       buildings: [],
@@ -120,7 +123,7 @@ export async function GET(request: NextRequest) {
             alt: f,
           }));
         }
-      })
+      }),
     );
 
     return NextResponse.json({ files });

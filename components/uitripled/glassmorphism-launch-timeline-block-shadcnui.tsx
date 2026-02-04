@@ -2,22 +2,9 @@
 
 import { motion, type Variants } from "framer-motion";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  CalendarDays,
-  Compass,
-  Flag,
-  GalleryHorizontalEnd,
-  Rocket,
-  RotateCcw,
-  RotateCw,
-  Sparkles,
-  Upload,
-} from "lucide-react";
-import { useState } from "react";
+import { GalleryHorizontalEnd, RotateCw, Sparkles, Upload } from "lucide-react";
 import { ProcessStep } from "@/lib/types";
-import { stat } from "fs";
 import { cn } from "@/lib/utils";
 
 const steps = [
@@ -79,10 +66,13 @@ const item: Variants = {
   },
 };
 
-
-
-export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview}: {onClick?: () => void, status: ProcessStep, triggerReview?: () => void}) {
-
+export function GlassmorphismLaunchTimelineBlock({
+  onClick,
+  status,
+}: {
+  onClick?: () => void;
+  status: ProcessStep;
+}) {
   return (
     <section className="relative overflow-hidden px-6 py-24 lg:py-32">
       <div className="mx-auto grid max-w-6xl gap-14 lg:grid-cols-[1.05fr_1fr]">
@@ -93,7 +83,7 @@ export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="relative overflow-hidden rounded-3xl border border-border/50 bg-background/45 p-10 backdrop-blur-2xl"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.04] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-br from-foreground/4 via-transparent to-transparent" />
             <div className="relative">
               <div className="space-y-5">
                 <h2 className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
@@ -127,7 +117,6 @@ export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview
             </div>
           </motion.div>
         )}
-        
 
         <motion.ul
           variants={container}
@@ -135,7 +124,7 @@ export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview
           animate="show"
           className="relative flex flex-col gap-4"
         >
-          <div className="pointer-events-none absolute left-[22px] top-4 bottom-4 hidden w-px bg-gradient-to-b from-foreground/10 via-foreground/5 to-transparent lg:block" />
+          <div className="pointer-events-none absolute left-5.5 top-4 bottom-4 hidden w-px bg-linear-to-b from-foreground/10 via-foreground/5 to-transparent lg:block" />
           {steps.map((step, index) => {
             const Icon = step.icon;
             if (index !== 0)
@@ -146,7 +135,7 @@ export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview
                   className="group relative overflow-hidden rounded-3xl border border-border/50 bg-background/45 p-6 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-border/70"
                 >
                   <div className="relative z-10 flex items-start gap-4">
-                    <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-border/40 bg-background/70 text-foreground/80 shadow-[0_10px_30px_rgba(15,23,42,0.25)]">
+                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border/40 bg-background/70 text-foreground/80 shadow-[0_10px_30px_rgba(15,23,42,0.25)]">
                       {status === step.status ? (
                         //  loading spinner
                         <RotateCw className="h-4 w-4 animate-spin" />
@@ -168,7 +157,7 @@ export function GlassmorphismLaunchTimelineBlock({onClick, status, triggerReview
                       </p>
                     </div>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.04] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 -z-10" />
+                  <div className="absolute inset-0 bg-linear-to-br from-foreground/4 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 -z-10" />
                 </motion.li>
               );
           })}

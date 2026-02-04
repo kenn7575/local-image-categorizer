@@ -29,17 +29,16 @@ export function GalleryGridBlock() {
 
         if (files) {
           Object.keys(files).forEach((category) => {
-            // @ts-ignore
             if (Array.isArray(files[category])) {
-               // @ts-ignore
-                files[category].forEach((file: any) => {
-                    images.push({
-                        id: idCounter++,
-                        url: file.src,
-                        title: file.fileName,
-                        category: category.charAt(0).toUpperCase() + category.slice(1)
-                    });
+              files[category].forEach((file) => {
+                images.push({
+                  id: idCounter++,
+                  url: file.src,
+                  title: file.fileName,
+                  category:
+                    category.charAt(0).toUpperCase() + category.slice(1),
                 });
+              });
             }
           });
         }
@@ -63,7 +62,7 @@ export function GalleryGridBlock() {
   const handleNext = () => {
     if (selectedImage !== null) {
       const currentIndex = galleryImages.findIndex(
-        (img) => img.id === selectedImage
+        (img) => img.id === selectedImage,
       );
       const nextIndex = (currentIndex + 1) % galleryImages.length;
       setSelectedImage(galleryImages[nextIndex].id);
@@ -73,7 +72,7 @@ export function GalleryGridBlock() {
   const handlePrev = () => {
     if (selectedImage !== null) {
       const currentIndex = galleryImages.findIndex(
-        (img) => img.id === selectedImage
+        (img) => img.id === selectedImage,
       );
       const prevIndex =
         (currentIndex - 1 + galleryImages.length) % galleryImages.length;
@@ -82,12 +81,12 @@ export function GalleryGridBlock() {
   };
 
   const selectedImageData = galleryImages.find(
-    (img) => img.id === selectedImage
+    (img) => img.id === selectedImage,
   );
 
   const handleCardKeyDown = (
     event: KeyboardEvent<HTMLDivElement>,
-    imageId: number
+    imageId: number,
   ) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();

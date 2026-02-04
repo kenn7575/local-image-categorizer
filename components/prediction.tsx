@@ -1,14 +1,7 @@
 "use client";
 
-import { useEffect, useState, ChangeEvent } from "react";
-import * as tf from "@tensorflow/tfjs";
-import { loadModel, processImage } from "@/lib/modelManager_old";
-import {
-  predictionItem,
-  PredictionResult,
-  ProcessStep,
-  Task,
-} from "@/lib/types";
+import { useState, ChangeEvent } from "react";
+import { PredictionResult, ProcessStep } from "@/lib/types";
 import { GlassmorphismLaunchTimelineBlock } from "./uitripled/glassmorphism-launch-timeline-block-shadcnui";
 import { loadModelUsingOnnx, processImageUsingOnnx } from "@/lib/modelManager";
 
@@ -58,12 +51,6 @@ export default function PredictImage({
     <>
       {isProcessing && <p>Processing images...</p>}
       <GlassmorphismLaunchTimelineBlock
-        triggerReview={() => {
-          if (setMode) {
-          } else {
-            console.warn("setMode is not provided");
-          }
-        }}
         onClick={() => {
           const input = document.createElement("input");
           input.type = "file";

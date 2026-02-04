@@ -26,23 +26,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-
-import {
-  Filter,
-  MoreHorizontal,
-  MoveLeft,
-  Plus,
-  Search,
-} from "lucide-react";
+import { MoreHorizontal, MoveLeft } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { saveResults } from "@/lib/saveResults";
+import Image from "next/image";
 
 // --- Types ---
-
-
 
 // --- Mock Data ---
 
@@ -55,19 +46,21 @@ const initialColumns: Column[] = [
   { id: "mountain", title: "Mountain" },
 ];
 
-
 // --- Components ---
 
 interface KanbanBoardProps {
   initialPredictions: PredictionResult[];
 }
 
-export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & { setMode?: (mode: "upload" | "review") => void }) {
+export function KanbanBoard({
+  initialPredictions,
+  setMode,
+}: KanbanBoardProps & { setMode?: (mode: "upload" | "review") => void }) {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery] = useState("");
 
   useEffect(() => {
     const mappedTasks: Task[] = initialPredictions.map((p) => {
@@ -75,19 +68,17 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
       const highestPrediction =
         p.prediction && p.prediction.length > 0
           ? p.prediction.reduce((prev, current) =>
-              prev.certainty > current.certainty ? prev : current
+              prev.certainty > current.certainty ? prev : current,
             )
           : null;
 
       return {
         ...p,
         id: p.fileName,
-        columnId: (
-          highestPrediction?.type ||
-          "street"
-        ).toLowerCase(),
+        columnId: (highestPrediction?.type || "street").toLowerCase(),
       };
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTasks(mappedTasks);
   }, [initialPredictions]);
 
@@ -99,7 +90,7 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
@@ -107,7 +98,7 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
   const filteredTasks = useMemo(() => {
     if (!searchQuery) return tasks;
     return tasks.filter((task) =>
-      task.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+      task.fileName.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [tasks, searchQuery]);
 
@@ -161,7 +152,7 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
         const newColumnId = overId;
 
         tasks[activeIndex].columnId = newColumnId;
-        
+
         console.log("DROPPING TASK OVER COLUMN", { activeIndex });
         return arrayMove(tasks, activeIndex, activeIndex);
       });
@@ -207,16 +198,21 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
 
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col gap-6 overflow-hidden bg-background p-6">
-      <Button variant="secondary" className="mr-auto" onClick={() => {
-        if (setMode) setMode("upload");
-      }}>
+      <Button
+        variant="secondary"
+        className="mr-auto"
+        onClick={() => {
+          if (setMode) setMode("upload");
+        }}
+      >
         <MoveLeft />
-        Back</Button>
+        Back
+      </Button>
       {/* Glassmorphism background blobs */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div className="absolute left-1/2 top-0 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-foreground/[0.035] blur-[140px]" />
-        <div className="absolute bottom-0 right-0 h-[360px] w-[360px] rounded-full bg-foreground/[0.025] blur-[120px]" />
-        <div className="absolute top-1/2 left-1/4 h-[400px] w-[400px] rounded-full bg-primary/[0.02] blur-[150px]" />
+        <div className="absolute left-1/2 top-0 h-130 w-130 -translate-x-1/2 rounded-full bg-foreground/[0.035] blur-[140px]" />
+        <div className="absolute bottom-0 right-0 h-90 w-90 rounded-full bg-foreground/2.5 blur-[120px]" />
+        <div className="absolute top-1/2 left-1/4 h-100 w-100 rounded-full bg-primary/2 blur-[150px]" />
       </div>
       {/* Header */}
       <div className="relative flex flex-col gap-4 rounded-2xl border border-border/40 bg-background/60 p-6 backdrop-blur-xl md:flex-row md:items-center md:justify-between">
@@ -231,15 +227,15 @@ export function KanbanBoard({ initialPredictions, setMode }: KanbanBoardProps & 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          
-          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
-          onClick={async ()=>{
-            console.log("Saving results...", tasks);
-            await saveResults(tasks);
-            // navigate to /
-            window.location.href = "/";
-          }}>
-          
+          <Button
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+            onClick={async () => {
+              console.log("Saving results...", tasks);
+              await saveResults(tasks);
+              // navigate to /
+              window.location.href = "/";
+            }}
+          >
             Save images
           </Button>
         </div>
@@ -300,10 +296,7 @@ function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
     isDragging,
   } = useSortable({
     id: column.id,
-    data: {
-      type: "Column",
-      column,
-    },
+    data: { type: "Column", column },
   });
 
   const style = {
@@ -318,14 +311,14 @@ function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/column relative flex h-full w-[350px] min-w-[350px] flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/50 backdrop-blur-xl shadow-lg",
+        "group/column relative flex h-full w-87.5 min-w-87.5 flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/50 backdrop-blur-xl shadow-lg",
         isDragging && "opacity-50",
         isOverlay &&
-          "rotate-2 scale-105 shadow-2xl cursor-grabbing bg-background/70"
+          "rotate-2 scale-105 shadow-2xl cursor-grabbing bg-background/70",
       )}
     >
       {/* Gradient overlay for column */}
-      <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.03] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover/column:opacity-100" />
+      <div className="absolute inset-0 bg-linear-to-br from-foreground/3 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover/column:opacity-100" />
 
       {/* Column Header */}
       <div
@@ -358,7 +351,6 @@ function BoardColumn({ column, tasks, isOverlay }: BoardColumnProps) {
             <TaskCard key={task.id} task={task} />
           ))}
         </SortableContext>
-        
       </div>
     </div>
   );
@@ -400,17 +392,19 @@ function TaskCard({ task, isOverlay }: TaskCardProps) {
         "group relative flex cursor-grab flex-col gap-3 overflow-hidden rounded-xl border border-border/40 bg-background/70 p-4 shadow-lg backdrop-blur-xl transition-all hover:border-border/60 hover:shadow-xl hover:-translate-y-1 active:cursor-grabbing",
         isDragging && "opacity-30",
         isOverlay &&
-          "rotate-2 scale-105 shadow-2xl cursor-grabbing opacity-100 bg-background/90 backdrop-blur-xl z-50"
+          "rotate-2 scale-105 shadow-2xl cursor-grabbing opacity-100 bg-background/90 backdrop-blur-xl z-50",
       )}
     >
       {/* Gradient overlay for card */}
-      <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.02] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="absolute inset-0 bg-linear-to-br from-foreground/2 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-        <img
+        <Image
           src={task.imageUrl}
           alt={task.fileName}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          width={150}
+          height={150}
         />
       </div>
 

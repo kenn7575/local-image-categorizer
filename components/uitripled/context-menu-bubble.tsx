@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Copy, Edit, MoreVertical, Share2, GalleryHorizontalEnd, Upload, Trash2 } from "lucide-react";
+import { MoreVertical, Share2, GalleryHorizontalEnd, Upload } from "lucide-react";
 import { MouseEvent, useRef, useState } from "react";
 
 type MenuItem = {
