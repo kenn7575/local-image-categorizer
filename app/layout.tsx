@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
-import { ContextMenuBubble } from "@/components/uitripled/context-menu-bubble";
+import { NavigationButtons } from "@/components/navigation-buttons";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -30,7 +30,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        
+        <div className="flex justify-center mt-4">
+          <NavigationButtons />
+        </div>
         {children}
       </body>
     </html>
